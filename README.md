@@ -1,11 +1,13 @@
-pip install -r requirements.txt
-See requirements.txt for the full list
-numpy
-pandas
-torch (PyTorch)
-scikit-learn
-scipy
-openpyxl
+pip install -r requirements.txt.
+See requirements.txt for the full list.
+numpy.
+pandas.
+torch (PyTorch).
+scikit-learn.
+scipy.
+openpyxl.
+
+
 Data File Description
 SPT_curve_selected.xlsx
 Contains the SPT (Small Punch Test) data from FEM training and testing datasets used in Experiments 1-4 of this study.
