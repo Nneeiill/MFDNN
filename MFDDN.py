@@ -1,15 +1,13 @@
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.autograd as autograd
 import torch.nn.functional as F
+from torch import optim, autograd
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
-import scipy.linalg
 
-# --- Utility Functions ---
 def mean_absolute_percentage_error(y_true, y_pred):
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
@@ -32,29 +30,14 @@ def min_max_normalization2(data):
     norm_data = (data - min_vals) / denominator
     return norm_data
 
-def Decimal_Scaling(data):
-    X_normalized = data / np.max(data)
-    return X_normalized
-
-def fit(Xs, Xt):
-    cov_src = np.cov(Xs.T) + np.eye(Xs.shape[1])
-    cov_tar = np.cov(Xt.T) + np.eye(Xt.shape[1])
-    A_coral = np.dot(
-        scipy.linalg.fractional_matrix_power(cov_src, -0.5),
-        scipy.linalg.fractional_matrix_power(cov_tar, 0.5)
-    )
-    Xs_new = np.real(np.dot(Xs, A_coral))
-    return Xs_new
-
-# --- Neural Network Definitions ---
 class Unit(nn.Module):
     def __init__(self, in_N, out_N):
         super(Unit, self).__init__()
         self.L = nn.Linear(in_N, out_N)
     def forward(self, x):
-        x = self.L(x)
-        x = F.selu(x)
-        return x
+        x1 = self.L(x)
+        x2 = F.selu(x1)
+        return x2
 
 class NN1(nn.Module):
     def __init__(self, in_N, width, depth, out_N):
@@ -101,47 +84,69 @@ class FCNNModel(nn.Module):
         x = self.fc4(x)
         return x
 
-# --- Model Training Pipeline ---
-def train_stacking_mfdnn(X_train, y_train, X_test, y_test, x_train_row, x_test_row):
-    torch.manual_seed(1234)
-    np.random.seed(1234)
-    # Base models
-    model1 = RandomForestRegressor(n_estimators=1000, random_state=72)
-    model2 = LinearRegression()
-    model3 = GradientBoostingRegressor(n_estimators=1000, random_state=72)
-    model4 = SVR(C=11.0, epsilon=0.05)
-    model1.fit(X_train, y_train.ravel())
-    model2.fit(X_train, y_train.ravel())
-    model3.fit(X_train, y_train.ravel())
-    model4.fit(X_train, y_train.ravel())
-    # Stacking features
-    pred1 = model1.predict(X_train)
-    pred2 = model2.predict(X_train)
-    pred3 = model3.predict(X_train)
-    pred4 = model4.predict(X_train)
-    meta_features = torch.stack((torch.tensor(pred1, dtype=torch.float32),
-                                 torch.tensor(pred2, dtype=torch.float32),
-                                 torch.tensor(pred3, dtype=torch.float32),
-                                 torch.tensor(pred4, dtype=torch.float32)), dim=1)
-    fcnn_model = FCNNModel(meta_features.shape[1], 64, 1)
-    criterion = nn.L1Loss()
-    optimizer = optim.Adam(fcnn_model.parameters(), lr=0.001)
-    # Train meta-learner
-    for epoch in range(1000):
-        optimizer.zero_grad()
-        output = fcnn_model(meta_features)
-        loss = criterion(output.flatten(), torch.tensor(y_train.reshape(-1), dtype=torch.float32).flatten())
-        loss.backward()
-        optimizer.step()
-    # Test set
-    pred1_t = model1.predict(X_test)
-    pred2_t = model2.predict(X_test)
-    pred3_t = model3.predict(X_test)
-    pred4_t = model4.predict(X_test)
-    meta_features_test = torch.stack((torch.tensor(pred1_t, dtype=torch.float32),
-                                      torch.tensor(pred2_t, dtype=torch.float32),
-                                      torch.tensor(pred3_t, dtype=torch.float32),
-                                      torch.tensor(pred4_t, dtype=torch.float32)), dim=1)
-    final_pred_tensor = fcnn_model(meta_features_test)
-    mape = mean_absolute_percentage_error(y_test, final_pred_tensor.detach().numpy())
-    return final_pred_tensor, mape
+torch.manual_seed(1234)
+np.random.seed(1234)
+
+# data read
+# df = pd.read_excel('Strain-Stress.xlsx', sheet_name=0)
+# dfs = ...
+
+
+
+# X_train = ...
+# y_train = ...
+# X_test = ...
+# y_test = ...
+# x_train_row = ...
+# x_test_row = ...
+
+
+alpha3 = torch.tensor([0.0], requires_grad=True)
+alpha4 = torch.tensor([0.0], requires_grad=True)
+
+model_h_s = NN1(40, 128, 5, 35)
+model_h_s.apply(weights_init)
+model4_1 = NN2(75, 64, 3, 35)
+model4_1.apply(weights_init)
+
+optimizer3 = optim.Adam([
+    {'params': model_h_s.parameters(), 'weight_decay': 0.01},
+    {'params': model4_1.parameters(), 'weight_decay': 0.01},
+    {'params': [alpha3],'lr': 1e-3},
+    {'params': [alpha4],'lr': 1e-3}], lr=1e-3)
+
+model1 = RandomForestRegressor(n_estimators=1000, random_state=72)
+model2 = LinearRegression()
+model3 = GradientBoostingRegressor(n_estimators=1000, random_state=72)
+model4 = SVR(C=11.0, epsilon=0.05)
+
+model1.fit(X_train, y_train.ravel())
+model2.fit(X_train, y_train.ravel())
+model3.fit(X_train, y_train.ravel())
+model4.fit(X_train, y_train.ravel())
+
+pred1 = model1.predict(X_train)
+pred2 = model2.predict(X_train)
+pred3 = model3.predict(X_train)
+pred4 = model4.predict(X_train)
+
+meta_features = torch.stack((torch.tensor(pred1, dtype=torch.float32),
+                             torch.tensor(pred2, dtype=torch.float32),
+                             torch.tensor(pred3, dtype=torch.float32),
+                             torch.tensor(pred4, dtype=torch.float32)), dim=1)
+
+input_size = meta_features.shape[1]
+hidden_size = 64
+output_size = 1
+fcnn_model = FCNNModel(input_size, hidden_size, output_size)
+
+criterion = nn.L1Loss()
+optimizer = optim.Adam(fcnn_model.parameters(), lr=0.001)
+
+for epoch in range(10000):
+    optimizer.zero_grad()
+    output = fcnn_model(meta_features)
+    loss = criterion(output.flatten(), torch.tensor(y_train.reshape(-1), dtype=torch.float32).flatten())
+    loss.backward()
+    optimizer.step()
+
