@@ -1,28 +1,56 @@
-pip install -r requirements.txt.
-See requirements.txt for the full list.
-numpy.
-pandas.
-torch (PyTorch).
-scikit-learn.
-scipy.
-openpyxl.
+# Software Environment and Dependencies
 
+To reproduce the results in this study, please ensure that all required packages are installed:
 
-Data File Description
-SPT_curve_selected.xlsx
-Contains the SPT (Small Punch Test) data from FEM training and testing datasets used in Experiments 1-4 of this study.
+```bash
+pip install -r requirements.txt
+```
 
-Strain-stress_selected.xlsx
-Contains the stress-strain data from FEM training and testing datasets used in Experiments 1-4 of this study.
+The key dependencies include:
 
-MFDNN.py
-The model definition file for the Multi-Fidelity Deep Neural Network (MFDNN) architecture used in this work.
+  * `numpy`
+  * `pandas`
+  * `torch` (PyTorch)
+  * `scikit-learn`
+  * `scipy`
+  * `openpyxl`
 
-Data & Model Usage Notes
-Please use SPT_curve_selected.xlsx as the model input. Data preprocessing to obtain physically meaningful features is required before training. For details on the preprocessing workflow, please refer to:
+For the complete list of dependencies, please refer to the `requirements.txt` file included in the supplementary materials.
 
-Yang, Zheng-Ni, et al. "Machine learning-based extraction of mechanical properties from multi-fidelity small punch test data." Advances in Manufacturing (2025): 1-14.
+# Data Files Description
 
-The real experimental material data used in this study cannot be provided due to commercial confidentiality agreements.
+**SPT-curve.xlsx**
 
-To reproduce the model training workflow, please make sure all required dependencies are installed (see requirements.txt if available), and refer to the code comments in MFDNN.py.
+This file contains the Small Punch Test (SPT) simulation data used for training and testing across Experiments 1–4.
+
+**Stress-Strain.xlsx**
+
+This file contains the uniaxial tensile stress–strain data from FEM simulations used in Experiments 1–4.
+
+# Finite Element Simulation Files
+
+All finite element simulations were conducted using LS-DYNA R2023.
+
+**SPT-FEM folder:** This folder contains the main `Main.key` driver deck along with associated control, contact, boundary, and material definition files. Users may execute the model directly or substitute different material cards by modifying the `INCLUDE Parameter material` entry, which links to the `DATABASE MATERIAL` section. This modular structure allows users to simulate different high-strength steels.
+
+**Tensile-FEM folder:** This folder contains the FEM files for uniaxial tensile simulations. By running these files, users can obtain the stress–strain curves under standard tensile loading conditions for the studied materials.
+
+# Model Code and Usage
+
+**MFDNN.py**
+
+This file contains the model definition for the Multi-Fidelity Deep Neural Network (MFDNN) architecture used in this work.
+
+**Usage Notes:**
+
+  * Use `SPT-curve.xlsx` as the model input.
+
+  * Prior to training, data preprocessing is required to extract physically meaningful features.
+
+  * For details on the preprocessing workflow, please refer to:
+
+    Yang, Zheng-Ni, et al. “Machine learning-based extraction of mechanical properties from multi-fidelity small punch test data.” *Advances in Manufacturing*, 2025.
+
+# Real Experimental Data Disclaimer
+
+Due to commercial confidentiality agreements with our industrial partners, the real experimental material data used in this study cannot be publicly released. We appreciate your understanding.
