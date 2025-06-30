@@ -10,7 +10,7 @@ The key dependencies include:
 
   * `numpy`
   * `pandas`
-  * `torch` (PyTorch)
+  * `torch`
   * `scikit-learn`
   * `scipy`
   * `openpyxl`
